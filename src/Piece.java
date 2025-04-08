@@ -1,3 +1,5 @@
+import java.util.Objects;
+
 public class Piece {
     private int number;
     private String color;
@@ -12,6 +14,15 @@ public class Piece {
     }
 
     public String getColor() {
-        return color + " " + number;
+        return color;
+    }
+
+    public boolean isJoker() {
+        return number == 0 && color.equals("joker");
+    }
+
+    @Override
+    public String toString() {
+        return isJoker() ? "JOKER" : color + " " + number;
     }
 }

@@ -1,52 +1,101 @@
 import java.util.*;
 
 public class Board {
-    private List<Piece> playedPieces;
+    private List<List<Piece>> playedGroups;
+    private List<Piece> stock;
     private List<Player> players;
+    private Player currentPlayer;
+    private boolean firstMove;
+    private int currentPlayerIndex;
 
     public Board(int numPlayers) {
-        this.playedPieces = new ArrayList<Piece>();
+        this.playedGroups = new ArrayList<>();
+        this.stock = new ArrayList<>();
         this.players = new ArrayList<>();
+        this.firstMove = true;
 
-        for (int i = 0; i < numPlayers; i++) {
-            players.add(new Player());
-        }
-
+        initializePieces();
+        initializePlayers(numPlayers);
+        dealPieces();
+        currentPlayer = players.get(0);
+        currentPlayerIndex = 0;
     }
 
-    private void initialBoard(){
-        String[] colors = new String[]{"white", "black", "red", "yellow", "green", "blue"};
+    private void initializePieces() {
+        String[] colors = {"red", "blue", "yellow", "black"};
+        for (String color : colors) {
+            for (int i = 1; i <= 13; i++) {
+                stock.add(new Piece(i, color));
+                stock.add(new Piece(i, color));
+            }
+        }
+        stock.add(new Piece(0, "joker"));
+        stock.add(new Piece(0, "joker"));
+        Collections.shuffle(stock);
+    }
 
-        for(String color : colors){
-            for (int i = 1; i<=13; i++){
-                playedPieces.add(new Piece(i, color));
+    private void initializePlayers(int n) {
+        for (int i = 1; i <= n; i++) {
+            players.add(new Player("Jogador " + i));
+        }
+    }
+
+    private void dealPieces() {
+        for (Player player : players) {
+            for (int i = 0; i < 14; i++) {
+                player.addPiece(stock.remove(0));
             }
         }
     }
 
-    private void displayBoard(){
-        Random rand = new Random();
+    public boolean playMove(Player player, List<Piece> move) {
+        if (player != currentPlayer) {
+            System.out.println("Não é sua vez!");
+            return false;
+        }
 
-        for (Player player : players){
-            int randomIndex = rand.nextInt(playedPieces.size());
-            Piece piece = playedPieces.get(randomIndex);
-            player.addPiece(piece);
-            playedPieces.remove(randomIndex);
+        if (firstMove) {
+            int sum = move.stream().mapToInt(Piece::getNumber).sum();
+            if (sum < 30) {
+                System.out.println("Jogada inicial inválida. Deve ter no mínimo 30 pontos.");
+                return false;
+            }
+            firstMove = false;
+        }
+
+        if (player.isValidPlay(move)) {
+            playedGroups.add(new ArrayList<>(move));
+            player.getPieces().removeAll(move);
+            return true;
+        }
+
+        return false;
+    }
+
+    public void drawPiece(Player player) {
+        if (!stock.isEmpty()) {
+            player.addPiece(stock.remove(0));
         }
     }
 
-    public void addPieces(List<Piece> pieces){
-        playedPieces.addAll(pieces);
+    public void nextPlayer() {
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        currentPlayer = players.get(currentPlayerIndex);
     }
 
-    public List<Piece> getPlayedPieces() {
-        return playedPieces;
+    public Player getCurrentPlayer() {
+        return currentPlayer;
     }
 
-    public List<Player> getPlayers() {
-        return players;
+    public boolean isFirstMove() {
+        return firstMove;
     }
 
-
-
+    public void displayBoard() {
+        System.out.println("\n==== Tabuleiro ====");
+        for (List<Piece> group : playedGroups) {
+            System.out.println(group);
+        }
+        System.out.println("Peças restantes no estoque: " + stock.size());
+    }
 }
